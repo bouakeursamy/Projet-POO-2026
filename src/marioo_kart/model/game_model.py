@@ -2,7 +2,7 @@ from constants import GameState, GRID_ROWS, GRID_COLS
 from model.car import Car
 from model.circuit import Circuit
 from model.road_tile import RoadTile
-from model.terrain import Road
+from model.terrain import Road, Grass, Dirt, Ice, Void
 
 
 class GameModel:
@@ -13,9 +13,33 @@ class GameModel:
         self.car: Car | None = None
 
     def load_circuit(self) -> None:
-        grid = [[RoadTile(col=col_idx, row=row_idx, terrain=Road())
-         for col_idx in range(GRID_COLS)]
-        for row_idx in range(GRID_ROWS)]
+        """Construit un circuit rectangulaire avec cinq terrains."""
+        grid = []
+
+        for row_idx in range(GRID_ROWS):
+            row = []
+
+            for col_idx in range(GRID_COLS):
+                inside = (1 <= row_idx <= 10 and 1 <= col_idx <= 14)
+                border = (row_idx <= 3 or row_idx >= 8
+                          or col_idx <= 3 or col_idx >= 12)
+
+                if inside and border:
+                    terrain = Road()
+                else:
+                    terrain = Grass()
+
+                if 2 <= row_idx <= 3 and 5 <= col_idx <= 8:
+                    terrain = Ice()
+                elif 8 <= row_idx <= 9 and 4 <= col_idx <= 7:
+                    terrain = Dirt()
+                elif row_idx in (0, 11) and col_idx in (0, 15):
+                    terrain = Void()
+
+                tile = RoadTile(col_idx, row_idx, terrain)
+                row.append(tile)
+
+            grid.append(row)
         self.circuit = Circuit(grid=grid, name="Circuit 1")
         self.spawn_car()
 
