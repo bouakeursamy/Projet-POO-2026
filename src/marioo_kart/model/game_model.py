@@ -15,7 +15,7 @@ class GameModel:
         grid = [[RoadTile(col=col_idx, row=row_idx)
          for col_idx in range(GRID_COLS)]
         for row_idx in range(GRID_ROWS)]
-        self.circuit = Circuit(grid=grid)
+        self.circuit = Circuit(grid=grid, name="Circuit 1")
         self.spawn_car()
 
     def spawn_car(self) -> None:

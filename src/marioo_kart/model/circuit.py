@@ -4,7 +4,8 @@ from constants import TILE_SIZE
 
 class Circuit:
 
-    def __init__(self,  grid: list[list[RoadTile]]):
+    def __init__(self, grid: list[list[RoadTile]], name: str):
+        self.name = name
         self.grid = grid
         self.rows = len(grid)
         self.cols = len(grid[0]) if grid else 0
