@@ -16,7 +16,7 @@ class RoadTile:
         if self.sprite and self.sprite.get_width() == tile_size:
             return self.sprite
         surface = pygame.Surface((tile_size, tile_size))
-        surface.fill((80, 80, 90))
+        surface.fill(self.terrain.color)
         pygame.draw.rect(surface, (60, 60, 70), surface.get_rect(), 2)
 
         self.sprite = surface
