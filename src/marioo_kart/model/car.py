@@ -3,7 +3,8 @@
 import pygame
 import math
 from constants import (
-    CAR_ACCELERATION, CAR_WIDTH, CAR_HEIGHT, TILE_SIZE
+    CAR_ACCELERATION, CAR_BRAKE, CAR_REVERSE_ACCELERATION,
+    AIR_DRAG, ROLLING_RESISTANCE, CAR_WIDTH, CAR_HEIGHT
 )
 
 
@@ -12,32 +13,91 @@ class Car:
 
     Parameters
     ----------
-    start_col : int
-        Colonne de la case de départ.
-    start_row : int
-        Ligne de la case de départ.
+    player : int
+        Numéro du joueur (1 ou 2).
+    x : float
+        Position de départ en x, en pixels.
+    y : float
+        Position de départ en y, en pixels.
     """
 
-    def __init__(self, start_col: int, start_row: int):
-        # la voiture part du centre de sa case de départ, en pixels
-        self.x = start_col * TILE_SIZE + TILE_SIZE // 2
-        self.y = start_row * TILE_SIZE + TILE_SIZE // 2
-        # vitesse en pixels par frame, angle en degrés
-        self.speed: float = 0.0
+    def __init__(self, player: int, x: float, y: float):
+        self.player = player
+        self.x = x
+        self.y = y
+        # vitesse en pixels par seconde, découpée selon les axes x et y
+        self.vx: float = 0.0
+        self.vy: float = 0.0
+        # orientation en radians : 0 vers la droite, positif vers la gauche
         self.angle: float = 0.0
+        # angle des roues avant, en radians
+        self.steering: float = 0.0
+        self.drifting: bool = False
+        self.boost_time: float = 0.0
+        # commandes de la frame en cours, remises à 0 à la fin de update
+        self.throttle: int = 0
+        self.steer_command: int = 0
         self.sprite = self.build_sprite()
 
     def accelerate(self) -> None:
-        """Augmente la vitesse d'un cran, à chaque frame où on accélère."""
-        self.speed += CAR_ACCELERATION
+        """Demande d'accélérer pendant cette frame."""
+        self.throttle = 1
 
-    def update_position(self) -> None:
-        """Déplace la voiture d'une frame selon sa vitesse."""
-        # l'axe y de pygame va vers le bas : la voiture descend l'écran
-        self.y += self.speed
+    def brake(self) -> None:
+        """Demande de freiner, ou de reculer si la voiture est arrêtée."""
+        self.throttle = -1
+
+    def turn_left(self) -> None:
+        """Demande de tourner à gauche pendant cette frame."""
+        self.steer_command = 1
+
+    def turn_right(self) -> None:
+        """Demande de tourner à droite pendant cette frame."""
+        self.steer_command = -1
+
+    def update(self, dt: float) -> None:
+        """Fait avancer la voiture pendant une frame.
+
+        Parameters
+        ----------
+        dt : float
+            Durée de la frame, en secondes.
+        """
+        # vecteur vers l'avant de la voiture ; l'axe y de pygame descend,
+        # d'où le signe moins devant le sinus
+        forward_x = math.cos(self.angle)
+        forward_y = -math.sin(self.angle)
+        # vitesse dans l'axe de la voiture, négative en marche arrière
+        speed = self.vx * forward_x + self.vy * forward_y
+
+        if self.throttle == 1:
+            speed += CAR_ACCELERATION * dt
+        elif self.throttle == -1:
+            # on freine si on avance, sinon on recule
+            if speed > 0:
+                speed -= CAR_BRAKE * dt
+            else:
+                speed -= CAR_REVERSE_ACCELERATION * dt
+
+        # l'air freine plus fort à grande vitesse : c'est lui qui fixe
+        # la vitesse maximale ; le roulement arrête une voiture en roue libre
+        speed -= AIR_DRAG * speed * abs(speed) * dt
+        speed -= ROLLING_RESISTANCE * speed * dt
+
+        self.vx = speed * forward_x
+        self.vy = speed * forward_y
+        self.x += self.vx * dt
+        self.y += self.vy * dt
+
+        self.throttle = 0
+        self.steer_command = 0
+
+    def get_speed(self) -> float:
+        """Renvoie la vitesse de la voiture, en pixels par seconde."""
+        return math.sqrt(self.vx ** 2 + self.vy ** 2)
 
     def build_sprite(self) -> pygame.Surface:
-        """Crée l'image de la voiture : un rectangle rouge arrondi.
+        """Crée l'image de la voiture : un rectangle rouge qui pointe à droite.
 
         Returns
         -------
@@ -45,9 +105,10 @@ class Car:
             Image de la voiture, sur un fond transparent.
         """
         # SRCALPHA garde le fond transparent autour du rectangle
-        surf = pygame.Surface((CAR_WIDTH, CAR_HEIGHT), pygame.SRCALPHA)
-        pygame.draw.rect(surf, (255, 0, 0), (0, 0, CAR_WIDTH,
-                         CAR_HEIGHT), border_radius=5)
+        # la longueur est en x, car l'angle 0 regarde vers la droite
+        surf = pygame.Surface((CAR_HEIGHT, CAR_WIDTH), pygame.SRCALPHA)
+        pygame.draw.rect(surf, (255, 0, 0), (0, 0, CAR_HEIGHT,
+                         CAR_WIDTH), border_radius=5)
         return surf
 
     def get_rotated_sprite(self) -> tuple[pygame.Surface, pygame.Rect]:
@@ -58,9 +119,10 @@ class Car:
         tuple[pygame.Surface, pygame.Rect]
             L'image tournée et le rectangle centré sur la voiture.
         """
-        # pygame tourne l'image dans le sens trigonométrique : le signe
-        # moins la fait tourner dans le sens des aiguilles d'une montre
-        rotated = pygame.transform.rotate(self.sprite, -self.angle)
+        # pygame veut des degrés et tourne dans le sens trigonométrique,
+        # comme notre angle
+        rotated = pygame.transform.rotate(self.sprite,
+                                          math.degrees(self.angle))
         # l'image tournée est plus grande : on la recentre sur la voiture
         rect = rotated.get_rect(center=(int(self.x), int(self.y)))
         return rotated, rect
