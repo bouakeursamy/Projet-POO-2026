@@ -1,12 +1,15 @@
 import pygame
 from constants import TILE_SIZE
+from model.terrain import Terrain
 
 
 class RoadTile:
 
-    def __init__(self, col: int, row: int):
+    def __init__(self, col: int, row: int, terrain: Terrain) -> None:
+        """Initialise la position et le terrain de la case."""
         self.col = col
         self.row = row
+        self.terrain = terrain
         self.sprite: pygame.Surface | None = None
 
     def get_sprite(self, tile_size: int = TILE_SIZE) -> pygame.Surface:
