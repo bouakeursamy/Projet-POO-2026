@@ -44,10 +44,14 @@ class GameModel:
                 row.append(tile)
 
             grid.append(row)
-        grid[2][10].block = Checkpoint()
-        grid[5][13].block = Checkpoint()
-        grid[9][9].block = Checkpoint()
-        grid[6][2].block = Checkpoint()
+        for row_idx in range(1, 4):
+            grid[row_idx][10].block = Checkpoint(1)
+        for col_idx in range(12, 15):
+            grid[5][col_idx].block = Checkpoint(2)
+        for row_idx in range(8, 11):
+            grid[row_idx][9].block = Checkpoint(3)
+        for col_idx in range(1, 4):
+            grid[6][col_idx].block = Checkpoint(4)
         for row_idx in range(1,4):
             grid[row_idx][4].block = FinishLine()
 
