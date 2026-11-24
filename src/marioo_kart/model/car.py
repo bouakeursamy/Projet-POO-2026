@@ -4,7 +4,8 @@ import pygame
 import math
 from constants import (
     CAR_ACCELERATION, CAR_BRAKE, CAR_REVERSE_ACCELERATION,
-    AIR_DRAG, ROLLING_RESISTANCE, CAR_WIDTH, CAR_HEIGHT
+    AIR_DRAG, ROLLING_RESISTANCE, CAR_WHEELBASE, CAR_MAX_STEERING,
+    CAR_WIDTH, CAR_HEIGHT
 )
 
 
@@ -56,13 +57,16 @@ class Car:
         self.steer_command = -1
 
     def update(self, dt: float) -> None:
-        """Fait avancer la voiture pendant une frame.
+        """Fait avancer et tourner la voiture pendant une frame.
 
         Parameters
         ----------
         dt : float
             Durée de la frame, en secondes.
         """
+        # les roues avant sont soit droites, soit braquées au maximum
+        self.steering = self.steer_command * CAR_MAX_STEERING
+
         # vecteur vers l'avant de la voiture ; l'axe y de pygame descend,
         # d'où le signe moins devant le sinus
         forward_x = math.cos(self.angle)
@@ -70,6 +74,38 @@ class Car:
         # vitesse dans l'axe de la voiture, négative en marche arrière
         speed = self.vx * forward_x + self.vy * forward_y
 
+        # modèle bicyclette : plus on roule vite, plus on tourne vite ;
+        # en marche arrière (speed < 0), le virage s'inverse tout seul
+        self.angle += speed / CAR_WHEELBASE * math.tan(self.steering) * dt
+
+        speed = self._apply_engine(speed, dt)
+
+        # pour l'instant la voiture adhère toujours : la vitesse suit le nez
+        forward_x = math.cos(self.angle)
+        forward_y = -math.sin(self.angle)
+        self.vx = speed * forward_x
+        self.vy = speed * forward_y
+        self.x += self.vx * dt
+        self.y += self.vy * dt
+
+        self.throttle = 0
+        self.steer_command = 0
+
+    def _apply_engine(self, speed: float, dt: float) -> float:
+        """Applique le moteur, les freins et les frottements à la vitesse.
+
+        Parameters
+        ----------
+        speed : float
+            Vitesse dans l'axe de la voiture, en pixels par seconde.
+        dt : float
+            Durée de la frame, en secondes.
+
+        Returns
+        -------
+        float
+            La nouvelle vitesse dans l'axe de la voiture.
+        """
         if self.throttle == 1:
             speed += CAR_ACCELERATION * dt
         elif self.throttle == -1:
@@ -83,14 +119,7 @@ class Car:
         # la vitesse maximale ; le roulement arrête une voiture en roue libre
         speed -= AIR_DRAG * speed * abs(speed) * dt
         speed -= ROLLING_RESISTANCE * speed * dt
-
-        self.vx = speed * forward_x
-        self.vy = speed * forward_y
-        self.x += self.vx * dt
-        self.y += self.vy * dt
-
-        self.throttle = 0
-        self.steer_command = 0
+        return speed
 
     def get_speed(self) -> float:
         """Renvoie la vitesse de la voiture, en pixels par seconde."""
