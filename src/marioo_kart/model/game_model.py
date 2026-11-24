@@ -6,6 +6,7 @@ from model.terrain import Road, Grass, Dirt, Ice, Void
 from model.checkpoint import Checkpoint
 from model.finish_line import FinishLine
 from model.start_block import StartBlock
+from model.boost import Boost
 
 
 class GameModel:
@@ -52,6 +53,8 @@ class GameModel:
 
         grid[1][3].block = StartBlock(1)
         grid[2][3].block = StartBlock(2)
+        grid[1][11].block = Boost()
+        grid[10][8].block = Boost()
         self.circuit = Circuit(grid=grid, name="Circuit 1")
         self.spawn_car()
 
