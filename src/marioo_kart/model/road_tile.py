@@ -10,6 +10,7 @@ class RoadTile:
         self.col = col
         self.row = row
         self.terrain = terrain
+        self.block = None
         self.sprite: pygame.Surface | None = None
 
     def get_sprite(self, tile_size: int = TILE_SIZE) -> pygame.Surface:

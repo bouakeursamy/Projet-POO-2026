@@ -3,6 +3,10 @@ from model.car import Car
 from model.circuit import Circuit
 from model.road_tile import RoadTile
 from model.terrain import Road, Grass, Dirt, Ice, Void
+from model.checkpoint import Checkpoint
+from model.finish_line import FinishLine
+from model.start_block import StartBlock
+from model.boost import Boost
 
 
 class GameModel:
@@ -40,6 +44,21 @@ class GameModel:
                 row.append(tile)
 
             grid.append(row)
+        for row_idx in range(1, 4):
+            grid[row_idx][10].block = Checkpoint(1)
+        for col_idx in range(12, 15):
+            grid[5][col_idx].block = Checkpoint(2)
+        for row_idx in range(8, 11):
+            grid[row_idx][9].block = Checkpoint(3)
+        for col_idx in range(1, 4):
+            grid[6][col_idx].block = Checkpoint(4)
+        for row_idx in range(1,4):
+            grid[row_idx][4].block = FinishLine()
+
+        grid[1][3].block = StartBlock(1)
+        grid[2][3].block = StartBlock(2)
+        grid[1][11].block = Boost()
+        grid[10][8].block = Boost()
         self.circuit = Circuit(grid=grid, name="Circuit 1")
         self.spawn_car()
 
