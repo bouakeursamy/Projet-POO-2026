@@ -27,21 +27,21 @@ class Road(Terrain):
 
     def __init__(self) -> None:
         """Initialise les propriétés de la route."""
-        super().__init__("route", (100, 100, 100), 1.0, 100.0, 20.0)
+        super().__init__("route", (100, 100, 100), 1.0, 760.0, 560.0)
 
 class Grass(Terrain):
     """Représente l'herbe, un terrain à adhérence réduite."""
 
     def __init__(self) -> None:
         """Initialise les propriétés de l'herbe."""
-        super().__init__("herbe", (80, 160, 80), 0.6, 60.0, 15.0)
+        super().__init__("herbe", (80, 160, 80), 0.6, 210.0, 150.0)
 
 class Dirt(Terrain):
     """Représente la terre, un terrain à adhérence moyenne."""
 
     def __init__(self) -> None:
         """Initialise les propriétés de la terre."""
-        super().__init__("terre", (150, 100, 60), 0.7, 70.0, 15.0)
+        super().__init__("terre", (150, 100, 60), 0.55, 120.0, 75.0)
 
 class Void(Terrain):
     """Représente une zone vide où la voiture ne peut pas rouler."""

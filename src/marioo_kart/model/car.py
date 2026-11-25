@@ -104,20 +104,59 @@ class Car:
         # en marche arrière (speed < 0), le virage s'inverse tout seul
         self.angle += speed / CAR_WHEELBASE * math.tan(self.steering) * dt
 
+        # axes de la voiture après le virage ; l'axe y de pygame descend
+        forward_x = math.cos(self.angle)
+        forward_y = -math.sin(self.angle)
+        left_x = -math.sin(self.angle)
+        left_y = -math.cos(self.angle)
+        # le nez a tourné mais pas la vitesse : une partie part de côté
+        speed = self.vx * forward_x + self.vy * forward_y
+        side_speed = self.vx * left_x + self.vy * left_y
+
         speed = self._apply_engine(speed, dt, terrain.traction)
+        side_speed = self._apply_grip(side_speed, dt, terrain)
         if self.boost_time > 0:
             self.boost_time -= dt
 
-        # pour l'instant la voiture adhère toujours : la vitesse suit le nez
-        forward_x = math.cos(self.angle)
-        forward_y = -math.sin(self.angle)
-        self.vx = speed * forward_x
-        self.vy = speed * forward_y
+        self.vx = speed * forward_x + side_speed * left_x
+        self.vy = speed * forward_y + side_speed * left_y
         self.x += self.vx * dt
         self.y += self.vy * dt
 
         self.throttle = 0
         self.steer_command = 0
+
+    def _apply_grip(self, side_speed: float, dt: float,
+                    terrain: Terrain) -> float:
+        """Annule ou freine le glissement de côté selon le terrain.
+
+        Parameters
+        ----------
+        side_speed : float
+            Vitesse de côté de la voiture, en pixels par seconde.
+        dt : float
+            Durée de la frame, en secondes.
+        terrain : Terrain
+            Terrain de la case où se trouve la voiture.
+
+        Returns
+        -------
+        float
+            La nouvelle vitesse de côté.
+        """
+        # effort que les pneus devraient fournir pour annuler le
+        # glissement en une frame ; dans un virage, il vaut v² / rayon
+        needed = abs(side_speed) / dt
+        if needed <= terrain.drift_threshold:
+            # les pneus tiennent : la voiture va là où elle pointe
+            self.drifting = False
+            return 0.0
+        # les pneus lâchent : le glissement diminue seulement un peu
+        self.drifting = True
+        reduction = terrain.drift_friction * dt
+        if side_speed > 0:
+            return max(side_speed - reduction, 0.0)
+        return min(side_speed + reduction, 0.0)
 
     def _apply_engine(self, speed: float, dt: float,
                       traction: float) -> float:
