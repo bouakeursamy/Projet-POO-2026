@@ -1,7 +1,7 @@
 import pygame
 
 
-MAPPING = {
+PLAYER1_MAPPING = {
     pygame.K_z: "accelerate",
     pygame.K_w: "accelerate",
     pygame.K_s: "brake",
@@ -10,11 +10,18 @@ MAPPING = {
     pygame.K_d: "turn_right",
 }
 
+PLAYER2_MAPPING = {
+    pygame.K_UP: "accelerate",
+    pygame.K_DOWN: "brake",
+    pygame.K_LEFT: "turn_left",
+    pygame.K_RIGHT: "turn_right",
+}
+
 
 class InputHandler:
 
     def __init__(self):
-        self.mapping = MAPPING
+        self.mapping = PLAYER1_MAPPING
 
     def get_inputs(self) -> dict:
         keys = pygame.key.get_pressed()
