@@ -19,6 +19,9 @@ class GameModel:
         self.circuit: Circuit | None = None
         self.car: Car | None = None
         self.race: Race = Race()
+        # Liste des voitures participant à la course
+        # L'indice 0 correspond au joueur 1 et l'indice 1 au joueur 2
+        self.cars: list[Car] = []
         self.last_blocks: list[str | None] = [None, None]
         # Dernière position de réapparition de chaque joueur
         self.last_checkpoint_positions: list[
@@ -150,54 +153,61 @@ class GameModel:
         self.state = GameState.RACING
     def spawn_car(self) -> None:
         """
-        Place la voiture du joueur 1 sur sa case de départ.
+        Crée les deux voitures sur leurs positions de départ.
 
-        Cette méthode parcourt les cases du circuit chargé
-        afin de trouver le bloc StartBlock du joueur 1.
+        Cette méthode recherche les blocs StartBlock des joueurs
+        1 et 2 dans la grille du circuit sélectionné.
 
-        Lorsque ce bloc est trouvé, elle calcule les coordonnées
-        du centre de la case et crée la voiture à cet endroit.
+        Pour chaque joueur, elle calcule le centre de sa case de
+        départ, crée un objet Car et mémorise sa position initiale
+        pour permettre une réapparition en cas de chute.
 
-        La position trouvée est également enregistrée comme
-        position de réapparition initiale. Ainsi, si le joueur
-        tombe dans le vide avant le premier checkpoint, sa
-        voiture revient à son point de départ.
+        Les voitures sont rangées dans self.cars :
+        - Indice 0 : voiture du joueur 1.
+        - Indice 1 : voiture du joueur 2.
 
         Retour
         ------
         None
-            La méthode initialise la voiture et mémorise
-            sa position de départ.
+            Les voitures et leurs positions de départ sont
+            enregistrées directement dans le modèle.
         """
 
-        # Vérifier qu'un circuit a été chargé
+        # Vérifier qu'un circuit est chargé
         if self.circuit is None:
             return
 
-        # Parcourir toutes les lignes du circuit
-        for row in self.circuit.grid:
+        # Réinitialiser les voitures et leurs positions de départ
+        self.cars = []
+        self.last_checkpoint_positions = [None, None]
 
-            # Parcourir chaque case de la ligne
-            for tile in row:
+        # Créer successivement les voitures des joueurs 1 et 2
+        for player in (1, 2):
+            start_tile = None
 
-                # Rechercher le bloc de départ du joueur 1
-                if (isinstance(tile.block, StartBlock)
-                        and tile.block.letter == "1"):
+            # Rechercher la case de départ du joueur
+            for row in self.circuit.grid:
+                for tile in row:
+                    if (isinstance(tile.block, StartBlock)
+                            and tile.block.letter == str(player)):
+                        start_tile = tile
 
-                    # Calculer les coordonnées du centre de la case
-                    x = (tile.col + 0.5) * TILE_SIZE
-                    y = (tile.row + 0.5) * TILE_SIZE
+            # Vérifier qu'une position de départ a été trouvée
+            if start_tile is None:
+                raise ValueError("Départ du joueur introuvable")
 
-                    # Créer la voiture du joueur 1 à cette position
-                    self.car = Car(1, x, y)
+            # Calculer les coordonnées du centre de la case
+            x = (start_tile.col + 0.5) * TILE_SIZE
+            y = (start_tile.row + 0.5) * TILE_SIZE
 
-                    # Mémoriser sa position de réapparition initiale
-                    self.last_checkpoint_positions[0] = (x, y)
+            # Créer la voiture et l'ajouter à la liste
+            self.cars.append(Car(player, x, y))
 
-                    # Arrêter la recherche une fois le départ trouvé
-                    return
+            # Mémoriser la position initiale de réapparition
+            self.last_checkpoint_positions[player - 1] = (x, y)
 
-        raise ValueError("Départ du joueur 1 introuvable")
+        # Conserver l'ancienne référence pour le contrôleur et la vue
+        self.car = self.cars[0]
 
     def check_car_block(self, car: Car, player: int) -> None:
         """Détecte l'entrée sur un checkpoint ou l'arrivée."""
@@ -297,38 +307,48 @@ class GameModel:
 
                 # Réinitialiser la détection des blocs spéciaux
                 self.last_blocks[index] = None
-    def update(self) -> None:
+    def update(self, dt: float = 1 / FPS) -> None:
         """
-        Met à jour le déroulement de la course à chaque image.
+        Met à jour les voitures et les événements de la course.
 
-        Cette méthode est exécutée uniquement lorsque le jeu est
-        en cours et qu'un circuit est chargé.
+        Cette méthode est exécutée lorsque la course est active.
+        Elle parcourt les voitures des deux joueurs et récupère
+        le terrain situé sous chacune d'elles.
 
-        Elle actualise la position de la voiture en fonction de
-        sa vitesse, puis vérifie les interactions avec les blocs
-        spéciaux du circuit : checkpoints, arrivée et boosts.
+        Pour chaque voiture, elle actualise son déplacement en
+        tenant compte des propriétés du terrain, vérifie si elle
+        est tombée dans le vide, puis détecte les éventuels blocs
+        spéciaux : checkpoints, boosts et ligne d'arrivée.
 
-        Enfin, elle vérifie si la voiture est tombée dans le vide.
-        Si nécessaire, elle déclenche sa réapparition au dernier
-        checkpoint validé ou à son point de départ.
+        Paramètres
+        ----------
+        dt : float
+            Durée écoulée entre deux mises à jour, en secondes.
+            Par défaut, cette durée correspond à 1 / FPS.
 
         Retour
         ------
         None
-            La méthode actualise directement les données du jeu.
+            Les positions des voitures et les données de la
+            course sont directement mises à jour.
         """
 
         # Vérifier que la course est active et qu'un circuit existe
         if self.state != GameState.RACING or self.circuit is None:
             return
 
-        # le terrain sous la voiture change sa traction
-        tile = self.circuit.get_tile_at_pixel(self.car.x, self.car.y)
-        if tile is not None:
-            self.car.update(1 / FPS, tile.terrain)
+        # Parcourir les voitures des deux joueurs
+        for car in self.cars:
 
-        # Détecter les checkpoints, l'arrivée et les boosts
-        self.check_car_block(self.car, 1)
+            # Récupérer le terrain sous la voiture
+            tile = self.circuit.get_tile_at_pixel(car.x, car.y)
 
-        # Vérifier une éventuelle chute dans le vide
-        self.check_car_void(self.car, 1)
+            # Actualiser le déplacement si le terrain est praticable
+            if tile is not None and not tile.terrain.is_void:
+                car.update(dt, tile.terrain)
+
+            # Vérifier une chute et réapparaître si nécessaire
+            self.check_car_void(car, car.player)
+
+            # Détecter les checkpoints, les boosts et l'arrivée
+            self.check_car_block(car, car.player)
