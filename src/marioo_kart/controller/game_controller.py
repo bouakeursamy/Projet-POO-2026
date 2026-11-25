@@ -5,6 +5,7 @@ from constants import (
     GameState
 )
 from model.game_model import GameModel
+from model.car import Car
 from view.game_view import GameView
 from controller.input_handler import InputHandler
 
@@ -57,9 +58,25 @@ class GameController:
         self.apply_input(car, p1_input)
         self.model.update()
 
-    def apply_input(self, car, player_input) -> None:
+    def apply_input(self, car: Car, player_input: dict[str, bool]) -> None:
+        """
+        Applique les actions d'un joueur à sa voiture.
+
+        Parameters
+        ----------
+        car : Car
+            Voiture du joueur.
+        player_input : dict[str, bool]
+            Actions du joueur, True si la touche est appuyée.
+        """
         if player_input['accelerate']:
             car.accelerate()
+        if player_input['brake']:
+            car.brake()
+        if player_input['turn_left']:
+            car.turn_left()
+        if player_input['turn_right']:
+            car.turn_right()
 
     def render(self) -> None:
         self.view.draw(self.model)
