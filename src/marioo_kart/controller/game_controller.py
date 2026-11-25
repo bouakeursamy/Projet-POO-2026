@@ -41,6 +41,8 @@ class GameController:
 
         if state == GameState.MENU:
             self.handle_menu_key(key)
+        elif state == GameState.RACING:
+            self.handle_racing_key(key)
 
     def handle_menu_key(self, key: int) -> None:
         if key == pygame.K_RETURN:
@@ -48,6 +50,18 @@ class GameController:
             self.model.state = GameState.RACING
         elif key == pygame.K_ESCAPE:
             self.quit()
+
+    def handle_racing_key(self, key: int) -> None:
+        """
+        Gère les touches pendant la course.
+
+        Parameters
+        ----------
+        key : int
+            Code pygame de la touche appuyée.
+        """
+        if key == pygame.K_ESCAPE:
+            self.model.state = GameState.MENU
 
     def update(self) -> None:
         if self.model.state != GameState.RACING:
