@@ -291,12 +291,9 @@ class GameModel:
             # Vérifier qu'une position de réapparition existe
             if position is not None:
 
-                # Replacer la voiture au dernier checkpoint validé
-                car.x, car.y = position
-
-                # Annuler sa vitesse pour arrêter son déplacement
-                car.vx = 0.0
-                car.vy = 0.0
+                # Réapparition de la voiture au dernier checkpoint validé
+                # La méthode respawn remet aussi la vitesse et les effets à zéro
+                car.respawn(position[0], position[1])
 
                 # Réinitialiser la détection des blocs spéciaux
                 self.last_blocks[index] = None
