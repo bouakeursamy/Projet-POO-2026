@@ -7,6 +7,7 @@ from constants import (
     AIR_DRAG, ROLLING_RESISTANCE, CAR_WHEELBASE, CAR_MAX_STEERING,
     CAR_WIDTH, CAR_HEIGHT
 )
+from model.terrain import Terrain
 
 
 class Car:
@@ -56,13 +57,15 @@ class Car:
         """Demande de tourner à droite pendant cette frame."""
         self.steer_command = -1
 
-    def update(self, dt: float) -> None:
+    def update(self, dt: float, terrain: Terrain) -> None:
         """Fait avancer et tourner la voiture pendant une frame.
 
         Parameters
         ----------
         dt : float
             Durée de la frame, en secondes.
+        terrain : Terrain
+            Terrain de la case où se trouve la voiture.
         """
         # les roues avant sont soit droites, soit braquées au maximum
         self.steering = self.steer_command * CAR_MAX_STEERING
@@ -78,7 +81,7 @@ class Car:
         # en marche arrière (speed < 0), le virage s'inverse tout seul
         self.angle += speed / CAR_WHEELBASE * math.tan(self.steering) * dt
 
-        speed = self._apply_engine(speed, dt)
+        speed = self._apply_engine(speed, dt, terrain.traction)
 
         # pour l'instant la voiture adhère toujours : la vitesse suit le nez
         forward_x = math.cos(self.angle)
@@ -91,7 +94,8 @@ class Car:
         self.throttle = 0
         self.steer_command = 0
 
-    def _apply_engine(self, speed: float, dt: float) -> float:
+    def _apply_engine(self, speed: float, dt: float,
+                      traction: float) -> float:
         """Applique le moteur, les freins et les frottements à la vitesse.
 
         Parameters
@@ -100,20 +104,23 @@ class Car:
             Vitesse dans l'axe de la voiture, en pixels par seconde.
         dt : float
             Durée de la frame, en secondes.
+        traction : float
+            Adhérence du terrain, entre 0 et 1.
 
         Returns
         -------
         float
             La nouvelle vitesse dans l'axe de la voiture.
         """
+        # un terrain glissant transmet moins la force du moteur et des freins
         if self.throttle == 1:
-            speed += CAR_ACCELERATION * dt
+            speed += CAR_ACCELERATION * traction * dt
         elif self.throttle == -1:
             # on freine si on avance, sinon on recule
             if speed > 0:
-                speed -= CAR_BRAKE * dt
+                speed -= CAR_BRAKE * traction * dt
             else:
-                speed -= CAR_REVERSE_ACCELERATION * dt
+                speed -= CAR_REVERSE_ACCELERATION * traction * dt
 
         # l'air freine plus fort à grande vitesse : c'est lui qui fixe
         # la vitesse maximale ; le roulement arrête une voiture en roue libre

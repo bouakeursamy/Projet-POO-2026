@@ -102,5 +102,8 @@ class GameModel:
             return
 
         # durée d'une frame, en attendant que le contrôleur donne dt
-        self.car.update(1 / FPS)
+        # le terrain sous la voiture change sa traction
+        tile = self.circuit.get_tile_at_pixel(self.car.x, self.car.y)
+        if tile is not None:
+            self.car.update(1 / FPS, tile.terrain)
         self.check_car_block(self.car, 1)
