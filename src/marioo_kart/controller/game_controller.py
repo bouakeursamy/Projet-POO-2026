@@ -52,7 +52,7 @@ class GameController:
         if self.model.state != GameState.RACING:
             return
 
-        p1_input = self.input_handler.get_inputs()
+        p1_input, p2_input = self.input_handler.get_inputs()
         car = self.model.car
         self.apply_input(car, p1_input)
         self.model.update()
