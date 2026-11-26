@@ -68,8 +68,8 @@ class GameController:
             return
 
         p1_input, p2_input = self.input_handler.get_inputs()
-        car = self.model.car
-        self.apply_input(car, p1_input)
+        self.apply_input(self.model.cars[0], p1_input)
+        self.apply_input(self.model.cars[1], p2_input)
         self.model.update()
 
     def apply_input(self, car: Car, player_input: dict[str, bool]) -> None:
