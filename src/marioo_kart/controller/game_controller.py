@@ -21,11 +21,12 @@ class GameController:
         self.running = True
 
     def run(self) -> None:
+        """Fait tourner la boucle principale du jeu."""
         while self.running:
+            dt = self.clock.tick(FPS) / 1000
             self.handle_events()
-            self.update()
+            self.update(dt)
             self.render()
-            self.clock.tick(FPS)
 
     def handle_events(self) -> None:
         for event in pygame.event.get():
@@ -106,14 +107,22 @@ class GameController:
         if key == pygame.K_RETURN or key == pygame.K_ESCAPE:
             self.model.state = GameState.MENU
 
-    def update(self) -> None:
+    def update(self, dt: float) -> None:
+        """
+        Fait avancer la course d'une image.
+
+        Parameters
+        ----------
+        dt : float
+            Temps écoulé depuis l'image précédente, en secondes.
+        """
         if self.model.state != GameState.RACING:
             return
 
         p1_input, p2_input = self.input_handler.get_inputs()
         self.apply_input(self.model.cars[0], p1_input)
         self.apply_input(self.model.cars[1], p2_input)
-        self.model.update()
+        self.model.update(dt)
         if self.model.race.winner is not None:
             self.model.state = GameState.FINISHED
 
