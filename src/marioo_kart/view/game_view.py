@@ -3,9 +3,10 @@ import pygame
 from constants import (
     WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE, CAR_WIDTH, CAR_HEIGHT,
     COLOR_BG, COLOR_TEXT, COLOR_ACCENT, COLOR_PANEL, COLOR_PANEL_BORDER,
-    CAR_COLORS, GameState
+    CAR_COLORS, COLOR_BLOCK_TEXT, GameState
 )
 from model.car import Car
+from model.road_tile import RoadTile
 from model.game_model import GameModel
 
 
@@ -44,11 +45,9 @@ class GameView:
 
     def _draw_racing(self, model: GameModel) -> None:
 
-        for row_idx, row in enumerate(model.circuit.grid):
-            for col_idx, tile in enumerate(row):
-                sprite = tile.get_sprite(TILE_SIZE)
-                self.screen.blit(
-                    sprite, (col_idx * TILE_SIZE, row_idx * TILE_SIZE))
+        for row in model.circuit.grid:
+            for tile in row:
+                self._draw_tile(tile)
 
         if model.circuit is None:
             return
@@ -71,3 +70,23 @@ class GameView:
         rotated = pygame.transform.rotate(surf, math.degrees(car.angle))
         rect = rotated.get_rect(center=(int(car.x), int(car.y)))
         self.screen.blit(rotated, rect)
+
+    def _draw_tile(self, tile: RoadTile) -> None:
+        """Dessine une case et écrit la lettre de son bloc.
+
+        Parameters
+        ----------
+        tile : RoadTile
+            Case à dessiner.
+        """
+        rect = pygame.Rect(tile.col * TILE_SIZE, tile.row * TILE_SIZE,
+                           TILE_SIZE, TILE_SIZE)
+        self.screen.blit(tile.get_sprite(TILE_SIZE), rect)
+        if tile.block is None or tile.block.letter == "B":
+            return
+        label = tile.block.letter
+        if label == "C":
+            label = label + str(tile.block.number)
+        text = self.font.render(label, True, COLOR_BLOCK_TEXT)
+        self.screen.blit(text, text.get_rect(center=rect.center))
+        
