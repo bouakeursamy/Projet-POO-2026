@@ -23,7 +23,9 @@ CAR_HEIGHT = 50
 
 class GameState:
     MENU = "menu"
+    SELECTION = "selection"
     RACING = "racing"
+    FINISHED = "finished"
 
 
 # --- Couleurs UI ---
