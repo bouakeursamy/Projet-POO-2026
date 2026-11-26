@@ -41,15 +41,44 @@ class GameController:
 
         if state == GameState.MENU:
             self.handle_menu_key(key)
+        elif state == GameState.SELECTION:
+            self.handle_selection_key(key)
         elif state == GameState.RACING:
             self.handle_racing_key(key)
 
     def handle_menu_key(self, key: int) -> None:
+        """
+        Gère les touches du menu principal.
+
+        Parameters
+        ----------
+        key : int
+            Code pygame de la touche appuyée.
+        """
         if key == pygame.K_RETURN:
-            self.model.load_circuit()
-            self.model.state = GameState.RACING
+            self.model.state = GameState.SELECTION
         elif key == pygame.K_ESCAPE:
             self.quit()
+
+    def handle_selection_key(self, key: int) -> None:
+        """
+        Gère les touches de l'écran de choix du circuit.
+
+        Parameters
+        ----------
+        key : int
+            Code pygame de la touche appuyée.
+        """
+        index = self.model.selected_index
+        count = len(self.model.circuit_names)
+        if key == pygame.K_UP:
+            self.model.selected_index = (index - 1) % count
+        elif key == pygame.K_DOWN:
+            self.model.selected_index = (index + 1) % count
+        elif key == pygame.K_RETURN:
+            self.model.start_race(index)
+        elif key == pygame.K_ESCAPE:
+            self.model.state = GameState.MENU
 
     def handle_racing_key(self, key: int) -> None:
         """
