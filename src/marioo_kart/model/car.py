@@ -4,7 +4,7 @@ import math
 from constants import (
     CAR_ACCELERATION, CAR_BRAKE, CAR_REVERSE_ACCELERATION,
     AIR_DRAG, ROLLING_RESISTANCE, CAR_WHEELBASE, CAR_MAX_STEERING,
-    BOOST_ACCELERATION, BOOST_DURATION
+    CAR_STEERING_SPEED, BOOST_ACCELERATION, BOOST_DURATION
 )
 from model.terrain import Terrain
 
@@ -88,8 +88,7 @@ class Car:
         terrain : Terrain
             Terrain de la case où se trouve la voiture.
         """
-        # les roues avant sont soit droites, soit braquées au maximum
-        self.steering = self.steer_command * CAR_MAX_STEERING
+        self._update_steering(dt)
 
         # vecteur vers l'avant de la voiture ; l'axe y de pygame descend,
         # d'où le signe moins devant le sinus
@@ -123,6 +122,22 @@ class Car:
 
         self.throttle = 0
         self.steer_command = 0
+
+    def _update_steering(self, dt: float) -> None:
+        """Tourne les roues avant vers la position demandée par le joueur.
+
+        Parameters
+        ----------
+        dt : float
+            Durée de la frame, en secondes.
+        """
+        target = self.steer_command * CAR_MAX_STEERING
+        step = CAR_STEERING_SPEED * dt
+        # les roues tournent peu à peu, sans dépasser la cible
+        if self.steering < target:
+            self.steering = min(self.steering + step, target)
+        elif self.steering > target:
+            self.steering = max(self.steering - step, target)
 
     def _apply_grip(self, side_speed: float, dt: float,
                     terrain: Terrain) -> float:
