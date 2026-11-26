@@ -45,6 +45,8 @@ class GameController:
             self.handle_selection_key(key)
         elif state == GameState.RACING:
             self.handle_racing_key(key)
+        elif state == GameState.FINISHED:
+            self.handle_finished_key(key)
 
     def handle_menu_key(self, key: int) -> None:
         """
@@ -92,6 +94,18 @@ class GameController:
         if key == pygame.K_ESCAPE:
             self.model.state = GameState.MENU
 
+    def handle_finished_key(self, key: int) -> None:
+        """
+        Gère les touches de l'écran de fin de course.
+
+        Parameters
+        ----------
+        key : int
+            Code pygame de la touche appuyée.
+        """
+        if key == pygame.K_RETURN or key == pygame.K_ESCAPE:
+            self.model.state = GameState.MENU
+
     def update(self) -> None:
         if self.model.state != GameState.RACING:
             return
@@ -100,6 +114,8 @@ class GameController:
         self.apply_input(self.model.cars[0], p1_input)
         self.apply_input(self.model.cars[1], p2_input)
         self.model.update()
+        if self.model.race.winner is not None:
+            self.model.state = GameState.FINISHED
 
     def apply_input(self, car: Car, player_input: dict[str, bool]) -> None:
         """
