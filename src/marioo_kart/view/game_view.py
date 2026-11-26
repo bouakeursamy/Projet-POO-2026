@@ -1,9 +1,11 @@
+import math
 import pygame
 from constants import (
-    WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE,
+    WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE, CAR_WIDTH, CAR_HEIGHT,
     COLOR_BG, COLOR_TEXT, COLOR_ACCENT, COLOR_PANEL, COLOR_PANEL_BORDER,
-    GameState
+    CAR_COLORS, GameState
 )
+from model.car import Car
 from model.game_model import GameModel
 
 
@@ -50,5 +52,22 @@ class GameView:
 
         if model.circuit is None:
             return
-        surf, rect = model.car.get_rotated_sprite()
-        self.screen.blit(surf, rect)
+        for index, car in enumerate(model.cars):
+            self._draw_car(car, CAR_COLORS[index])
+
+    def _draw_car(self, car: Car, color: tuple[int, int, int]) -> None:
+        """Dessine une voiture tournée selon son angle.
+
+        Parameters
+        ----------
+        car : Car
+            Voiture à dessiner.
+        color : tuple[int, int, int]
+            Couleur de la voiture.
+        """
+        surf = pygame.Surface((CAR_HEIGHT, CAR_WIDTH), pygame.SRCALPHA)
+        pygame.draw.rect(surf, color, (0, 0, CAR_HEIGHT, CAR_WIDTH),
+                         border_radius=5)
+        rotated = pygame.transform.rotate(surf, math.degrees(car.angle))
+        rect = rotated.get_rect(center=(int(car.x), int(car.y)))
+        self.screen.blit(rotated, rect)
