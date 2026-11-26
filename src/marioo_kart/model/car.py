@@ -1,11 +1,10 @@
-"""Voiture d'un joueur : position, vitesse et image."""
+"""Voiture d'un joueur : position, vitesse et dynamique."""
 
-import pygame
 import math
 from constants import (
     CAR_ACCELERATION, CAR_BRAKE, CAR_REVERSE_ACCELERATION,
     AIR_DRAG, ROLLING_RESISTANCE, CAR_WHEELBASE, CAR_MAX_STEERING,
-    BOOST_ACCELERATION, BOOST_DURATION, CAR_WIDTH, CAR_HEIGHT
+    BOOST_ACCELERATION, BOOST_DURATION
 )
 from model.terrain import Terrain
 
@@ -39,7 +38,6 @@ class Car:
         # commandes de la frame en cours, remises à 0 à la fin de update
         self.throttle: int = 0
         self.steer_command: int = 0
-        self.sprite = self.build_sprite()
 
     def accelerate(self) -> None:
         """Demande d'accélérer pendant cette frame."""
@@ -199,34 +197,3 @@ class Car:
     def get_speed(self) -> float:
         """Renvoie la vitesse de la voiture, en pixels par seconde."""
         return math.sqrt(self.vx ** 2 + self.vy ** 2)
-
-    def build_sprite(self) -> pygame.Surface:
-        """Crée l'image de la voiture : un rectangle rouge qui pointe à droite.
-
-        Returns
-        -------
-        pygame.Surface
-            Image de la voiture, sur un fond transparent.
-        """
-        # SRCALPHA garde le fond transparent autour du rectangle
-        # la longueur est en x, car l'angle 0 regarde vers la droite
-        surf = pygame.Surface((CAR_HEIGHT, CAR_WIDTH), pygame.SRCALPHA)
-        pygame.draw.rect(surf, (255, 0, 0), (0, 0, CAR_HEIGHT,
-                         CAR_WIDTH), border_radius=5)
-        return surf
-
-    def get_rotated_sprite(self) -> tuple[pygame.Surface, pygame.Rect]:
-        """Renvoie l'image tournée selon l'angle, et sa place à l'écran.
-
-        Returns
-        -------
-        tuple[pygame.Surface, pygame.Rect]
-            L'image tournée et le rectangle centré sur la voiture.
-        """
-        # pygame veut des degrés et tourne dans le sens trigonométrique,
-        # comme notre angle
-        rotated = pygame.transform.rotate(self.sprite,
-                                          math.degrees(self.angle))
-        # l'image tournée est plus grande : on la recentre sur la voiture
-        rect = rotated.get_rect(center=(int(self.x), int(self.y)))
-        return rotated, rect
