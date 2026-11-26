@@ -112,10 +112,15 @@ class GameModel:
                     terrain = Dirt()
                 elif row_idx in (0, 11) or col_idx in (0, 15):
                     terrain = Void()
-                                # Ajouter trois cases de vide au centre du circuit 2
+                # Ajouter trois cases de vide au centre du circuit 2
                 # Ces obstacles remplacent une partie de l'herbe
                 if row_idx == 7 and 9 <= col_idx <= 11:
                     terrain = Void()
+                # Ajouter un trou sur la route du bas du circuit 2
+                # Les voitures peuvent contourner cet obstacle
+                if row_idx == 8 and col_idx == 11:
+                    terrain = Void()
+
                 row.append(RoadTile(col_idx, row_idx, terrain))
 
             grid.append(row)
@@ -141,7 +146,7 @@ class GameModel:
 
         # Les deux positions de départ
         grid[2][2].block = StartBlock(1)
-        grid[2][3].block = StartBlock(2)
+        grid[3][2].block = StartBlock(2)
 
         # Les deux boosts
         grid[2][7].block = Boost()
