@@ -54,6 +54,14 @@ class GameModel:
                 elif row_idx in (0, 11) and col_idx in (0, 15):
                     terrain = Void()
 
+                # Créer une zone de vide au milieu du circuit
+                # Remplacer une partie de l'herbe par un trou
+                if 5 <= row_idx <= 6 and 6 <= col_idx <= 9:
+                    terrain = Void()
+                # Ajouter un trou sur la route à droite du circuit
+                # Les joueurs peuvent contourner le trou
+                if row_idx == 7 and col_idx == 12:
+                    terrain = Void()
                 tile = RoadTile(col_idx, row_idx, terrain)
                 row.append(tile)
 
@@ -103,6 +111,10 @@ class GameModel:
                 elif 8 <= row_idx <= 10 and 8 <= col_idx <= 10:
                     terrain = Dirt()
                 elif row_idx in (0, 11) or col_idx in (0, 15):
+                    terrain = Void()
+                                # Ajouter trois cases de vide au centre du circuit 2
+                # Ces obstacles remplacent une partie de l'herbe
+                if row_idx == 7 and 9 <= col_idx <= 11:
                     terrain = Void()
                 row.append(RoadTile(col_idx, row_idx, terrain))
 
