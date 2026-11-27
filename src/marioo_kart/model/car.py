@@ -10,7 +10,7 @@ from model.terrain import Terrain
 
 
 class Car:
-    """Voiture pilotée par un joueur.
+    """Voiture pilotée par un joueur (modèle équilibré par défaut).
 
     Parameters
     ----------
@@ -20,10 +20,26 @@ class Car:
         Position de départ en x, en pixels.
     y : float
         Position de départ en y, en pixels.
+    name : str
+        Nom du modèle, affiché dans le menu.
+    acceleration : float
+        Accélération du moteur, en pixels par seconde au carré.
+    max_steering : float
+        Braquage maximal des roues avant, en radians.
+    air_drag : float
+        Frottement de l'air : plus il est petit, plus la voiture va vite.
     """
 
-    def __init__(self, player: int, x: float, y: float):
+    def __init__(self, player: int, x: float, y: float,
+                 name: str = "Équilibrée",
+                 acceleration: float = CAR_ACCELERATION,
+                 max_steering: float = CAR_MAX_STEERING,
+                 air_drag: float = AIR_DRAG):
         self.player = player
+        self.name = name
+        self.acceleration = acceleration
+        self.max_steering = max_steering
+        self.air_drag = air_drag
         self.x = x
         self.y = y
         # vitesse en pixels par seconde, découpée selon les axes x et y
@@ -131,7 +147,7 @@ class Car:
         dt : float
             Durée de la frame, en secondes.
         """
-        target = self.steer_command * CAR_MAX_STEERING
+        target = self.steer_command * self.max_steering
         step = CAR_STEERING_SPEED * dt
         # les roues tournent peu à peu, sans dépasser la cible
         if self.steering < target:
@@ -191,7 +207,7 @@ class Car:
         """
         # un terrain glissant transmet moins la force du moteur et des freins
         if self.throttle == 1:
-            speed += CAR_ACCELERATION * traction * dt
+            speed += self.acceleration * traction * dt
         elif self.throttle == -1:
             # on freine si on avance, sinon on recule
             if speed > 0:
@@ -205,10 +221,24 @@ class Car:
 
         # l'air freine plus fort à grande vitesse : c'est lui qui fixe
         # la vitesse maximale ; le roulement arrête une voiture en roue libre
-        speed -= AIR_DRAG * speed * abs(speed) * dt
+        speed -= self.air_drag * speed * abs(speed) * dt
         speed -= ROLLING_RESISTANCE * speed * dt
         return speed
 
     def get_speed(self) -> float:
         """Renvoie la vitesse de la voiture, en pixels par seconde."""
         return math.sqrt(self.vx ** 2 + self.vy ** 2)
+
+
+class SportCar(Car):
+    """Voiture rapide : forte accélération, mais braque moins."""
+
+    def __init__(self, player: int, x: float, y: float):
+        super().__init__(player, x, y, "Rapide", 360.0, 0.26, 0.0022)
+
+
+class AgileCar(Car):
+    """Voiture agile : tourne plus serré, mais va moins vite."""
+
+    def __init__(self, player: int, x: float, y: float):
+        super().__init__(player, x, y, "Agile", 270.0, 0.42, 0.0034)
