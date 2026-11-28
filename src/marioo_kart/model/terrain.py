@@ -14,6 +14,7 @@ class Terrain:
         self.drift_threshold = drift_threshold
         self.drift_friction = drift_friction
         self.is_void = False
+        self.is_solid = False
 
 class Ice(Terrain):
     """Représente la glace, un terrain à faible adhérence."""
@@ -50,3 +51,32 @@ class Void(Terrain):
         """Initialise les propriétés du vide."""
         super().__init__("vide", (20, 20, 30), 0.0, 0.0, 0.0)
         self.is_void = True
+
+
+class Wall(Terrain):
+    """
+    Représente un mur infranchissable sur le circuit.
+
+    Un mur est un terrain solide qui empêche les voitures
+    de passer à travers lorsqu'une collision est détectée.
+
+    Il se distingue du vide : une voiture doit être bloquée
+    par un mur, et non téléportée au dernier checkpoint.
+    """
+
+    def __init__(self) -> None:
+        """
+        Initialise les propriétés physiques et visuelles du mur.
+
+        Le mur possède une couleur rouge foncé pour être
+        facilement identifiable sur le circuit.
+
+        Sa propriété is_solid est définie à True afin de
+        permettre au modèle de détecter les obstacles.
+        """
+
+        # Initialiser les propriétés héritées de Terrain
+        super().__init__("mur", (170, 70, 70), 0.0, 0.0, 0.0)
+
+        # Indiquer que le mur est infranchissable
+        self.is_solid = True

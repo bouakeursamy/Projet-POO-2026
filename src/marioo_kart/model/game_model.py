@@ -4,7 +4,7 @@ from constants import (
 from model.car import Car
 from model.circuit import Circuit
 from model.road_tile import RoadTile
-from model.terrain import Road, Grass, Dirt, Ice, Void
+from model.terrain import Road, Grass, Dirt, Ice, Void, Wall
 from model.checkpoint import Checkpoint
 from model.finish_line import FinishLine
 from model.start_block import StartBlock
@@ -62,6 +62,11 @@ class GameModel:
                 # Les joueurs peuvent contourner le trou
                 if row_idx == 7 and col_idx == 12:
                     terrain = Void()
+                # Placer quatre murs aux coins de la zone d'herbe
+                # Les murs entourent la zone centrale sans bloquer le circuit
+                if row_idx in (4, 7) and col_idx in (4, 11):
+                    terrain = Wall()
+
                 tile = RoadTile(col_idx, row_idx, terrain)
                 row.append(tile)
 
@@ -120,6 +125,22 @@ class GameModel:
                 # Les voitures peuvent contourner cet obstacle
                 if row_idx == 8 and col_idx == 11:
                     terrain = Void()
+
+
+                # Ajouter des murs sur le contour intérieur
+                # de la zone d'herbe du deuxième circuit
+
+                # Partie horizontale supérieure
+                if row_idx == 4 and 4 <= col_idx <= 7:
+                    terrain = Wall()
+
+                # Partie verticale à droite
+                if 5 <= row_idx <= 7 and col_idx == 7:
+                    terrain = Wall()
+
+                # Dernier mur dans le coin inférieur droit
+                if row_idx == 7 and col_idx == 8:
+                    terrain = Wall()
 
                 row.append(RoadTile(col_idx, row_idx, terrain))
 
