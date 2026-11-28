@@ -27,7 +27,11 @@ class GameModel:
         self.last_checkpoint_positions: list[
             tuple[float, float] | None
         ] = [None, None]
-        self.circuit_names: list[str] = ["Circuit 1", "Circuit 2"]
+        self.circuit_names: list[str] = [
+            "Circuit 1",
+            "Circuit 2",
+            "Circuit 3"
+        ]
         self.selected_index: int = 0
 
     def load_circuit(self) -> None:
@@ -175,20 +179,215 @@ class GameModel:
         self.circuit = Circuit(grid=grid, name="Circuit 2")
         self.spawn_car()
 
+    def load_third_circuit(self) -> None:
+        """
+        Construit le troisième circuit du jeu : Le Serpent.
+
+        Ce circuit propose un niveau de difficulté plus élevé grâce
+        à plusieurs virages serrés et à des obstacles variés.
+
+        Il comprend :
+        - Une route avec plusieurs changements de direction.
+        - Des murs en briques délimitant les zones infranchissables.
+        - Des zones de glace et de terre modifiant l'adhérence.
+        - Des zones de vide représentant des dangers.
+        - Quatre checkpoints à franchir dans l'ordre.
+        - Une ligne d'arrivée et deux positions de départ.
+        - Trois boosts permettant d'accélérer temporairement.
+
+        La méthode construit la grille, place les blocs spéciaux,
+        puis initialise les voitures des deux joueurs.
+        """
+
+        # ==========================================================
+        # 1. CONSTRUCTION DE LA GRILLE ET DU TRACÉ
+        # ==========================================================
+
+        grid = []
+
+        # Parcourir chaque ligne de la grille
+        for row_idx in range(GRID_ROWS):
+            row = []
+
+            # Parcourir chaque colonne de la ligne
+            for col_idx in range(GRID_COLS):
+
+                # Définir les différentes sections de la route
+                top = 1 <= row_idx <= 2 and 1 <= col_idx <= 12
+
+                right_top = (
+                    2 <= row_idx <= 4 and 11 <= col_idx <= 13
+                )
+
+                upper_turn = (
+                    4 <= row_idx <= 5 and 8 <= col_idx <= 13
+                )
+
+                center = (
+                    5 <= row_idx <= 7 and 7 <= col_idx <= 9
+                )
+
+                lower_turn = (
+                    7 <= row_idx <= 8 and 8 <= col_idx <= 13
+                )
+
+                right_bottom = (
+                    8 <= row_idx <= 10 and 12 <= col_idx <= 14
+                )
+
+                bottom = (
+                    9 <= row_idx <= 10 and 2 <= col_idx <= 14
+                )
+
+                left = (
+                    2 <= row_idx <= 9 and 1 <= col_idx <= 3
+                )
+
+                # Déterminer si la case appartient au tracé
+                is_road = (
+                    top or right_top or upper_turn or center
+                    or lower_turn or right_bottom or bottom or left
+                )
+
+                # Créer une route sur le tracé
+                # et des murs sur les autres cases
+                if is_road:
+                    terrain = Road()
+                else:
+                    terrain = Wall()
+
+                # 2. BORDURES ET TERRAINS PARTICULIER
+                # Première ligne entièrement constituée de briques
+                if row_idx == 0:
+                    terrain = Wall()
+
+                # Bordures inférieure et latérales en terrain vide
+                elif (
+                    row_idx == GRID_ROWS - 1
+                    or col_idx in (0, GRID_COLS - 1)
+                ):
+                    terrain = Void()
+
+                # Zone de glace sur la partie supérieure
+                elif row_idx == 1 and 5 <= col_idx <= 9:
+                    terrain = Ice()
+
+                # Zone de terre sur la partie inférieure
+                elif row_idx in (9, 10) and 6 <= col_idx <= 10:
+                    terrain = Dirt()
+
+                # 3. OBSTACLES ET ZONES DANGEREUSES
+                # Placer les trous à éviter pendant la course
+                if (row_idx, col_idx) in (
+                    (2, 8),
+                    (4, 10),
+                    (7, 10),
+                ):
+                    terrain = Void()
+
+                # Murs dans la partie supérieure du circuit
+                if row_idx == 3 and 5 <= col_idx <= 8:
+                    terrain = Wall()
+
+                # Murs dans la partie centrale du circuit
+                if row_idx == 6 and 10 <= col_idx <= 12:
+                    terrain = Wall()
+
+                # Murs dans la partie inférieure du circuit
+                if row_idx == 8 and 5 <= col_idx <= 7:
+                    terrain = Wall()
+
+                # 4. PERSONNALISATION DES ZONES DU CIRCUIT
+                # Bande d'herbe à droite du circuit
+                # Colonne 14, de la ligne 1 à la ligne 7
+                if col_idx == 14 and 1 <= row_idx <= 7:
+                    terrain = Grass()
+
+                # Mur remplaçant l'ancien trou dans la zone de terre
+                if row_idx == 9 and col_idx == 7:
+                    terrain = Wall()
+
+                # Murs sur une partie de la dernière ligne
+                if row_idx == 11 and 6 <= col_idx <= 10:
+                    terrain = Wall()
+
+                # Créer la case avec son terrain définitif
+                tile = RoadTile(col_idx, row_idx, terrain)
+                row.append(tile)
+
+            # Ajouter la ligne complète à la grille
+            grid.append(row)
+
+        # 5. PLACEMENT DES BLOCS SPÉCIAUX
+        # Checkpoints : passage obligatoire dans l'ordre 1, 2, 3, 4
+        # Checkpoint 1 : partie supérieure
+        for row_idx in range(1, 3):
+            grid[row_idx][7].block = Checkpoint(1)
+
+        # Checkpoint 2 : premier virage à droite
+        for col_idx in range(11, 14):
+            grid[3][col_idx].block = Checkpoint(2)
+
+        # Checkpoint 3 : partie inférieure du circuit
+        for row_idx in range(7, 9):
+            grid[row_idx][11].block = Checkpoint(3)
+
+        # Checkpoint 4 : retour sur le côté gauche
+        for col_idx in range(1, 4):
+            grid[7][col_idx].block = Checkpoint(4)
+
+        # Ligne d'arrivée et positions de départ
+        # Ligne d'arrivée sur la partie supérieure
+        for row_idx in range(1, 3):
+            grid[row_idx][4].block = FinishLine()
+
+        # Position de départ du joueur 1
+        grid[1][2].block = StartBlock(1)
+
+        # Position de départ du joueur 2
+        grid[2][2].block = StartBlock(2)
+
+        # Boosts : accélération temporaire des voitures
+        # Boost 1 : première partie du circuit
+        grid[2][6].block = Boost()
+
+        # Boost 2 : virage central
+        grid[5][11].block = Boost()
+
+        # Boost 3 : partie inférieure
+        grid[10][10].block = Boost()
+
+        # 6. INITIALISATION DU CIRCUIT ET DES VOITURES
+        # Enregistrer la grille dans un objet Circuit
+        self.circuit = Circuit(
+            grid=grid,
+            name="Circuit 3"
+        )
+
+        # Positionner les deux voitures sur leurs cases de départ
+        self.spawn_car()
+
+
     def start_race(self, circuit_index: int) -> None:
         """Sélectionne un circuit et démarre une nouvelle course."""
         self.selected_index = circuit_index
 
         if circuit_index == 0:
             self.load_circuit()
+
         elif circuit_index == 1:
             self.load_second_circuit()
+
+        elif circuit_index == 2:
+            self.load_third_circuit()
+
         else:
             raise ValueError("Indice de circuit invalide")
 
         self.race = Race()
         self.last_blocks = [None, None]
         self.state = GameState.RACING
+
     def spawn_car(self) -> None:
         """
         Crée les deux voitures sur leurs positions de départ.
